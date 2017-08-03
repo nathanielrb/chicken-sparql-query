@@ -150,7 +150,7 @@
 (define unpack-sparql-bindings
   (json-unpacker sparql-binding))
 
-(define *rdf-unpacker* (make-parameter unpack-bindings))
+(define *query-results-unpacker* (make-parameter unpack-bindings))
 
 (define (sparql-select query #!rest args)
   (let ((endpoint (*sparql-endpoint*))
