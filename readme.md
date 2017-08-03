@@ -2,7 +2,7 @@
 
 Chicken Scheme module for querying SPARQL endpoints and managing namespaces.
 
-As shown in the following example, IRIs can be represented as either symbols or strings; `sparql-escape` can be used to escape strings, booleans, typed literals (as cons pairs '("val" . &lt;type&gt;), where &lt;type&gt; can be a symbol or a string), and language-tagged strings (as cons pair of '("val" . @lang) where @lang is a symbol.
+As shown in the following example, IRIs can be represented as either symbols or strings; `sparql-escape` can be used to escape strings, booleans, typed literals (as cons pairs `'("val" . <type>)`, where &lt;type&gt; can be a symbol or a string), and language-tagged strings (as cons pair of `'("val" . @lang)` where @lang is a symbol.
 
 ```
 (define-namespace animals "http://example.org/animals")
