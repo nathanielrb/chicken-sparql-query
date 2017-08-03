@@ -150,7 +150,7 @@
 (define typed-sparql-bindings
   (json-unpacker typed-sparql-binding))
 
-(define *query-unpacker* (make-parameter unpack-bindings))
+(define *query-unpacker* (make-parameter sparql-bindings))
 
 (define (sparql-select query #!rest args)
   (let ((endpoint (*sparql-endpoint*))
