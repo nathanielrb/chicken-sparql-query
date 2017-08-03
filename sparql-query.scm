@@ -30,6 +30,30 @@
   (if exp (cons exp p) p))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Basic datatypes
+(define (read-uri uri)
+  (and (string? uri)
+       (if  (or (substring=? "http://" uri)
+                (substring=? "https://" uri))
+            (string->symbol (conc "<" uri ">"))
+           (string->symbol uri))))
+
+(define-inline (langtag? exp)
+  (and (symbol? exp)
+       (equal? (substring (symbol->string exp) 0 1) "@")))
+
+(define (sparql-escape exp)
+  (cond ((string? exp) (conc "\"" exp "\""))
+        ((keyword? exp) (keyword->string exp))
+        ((number? exp) (number->string exp))
+        ((symbol? exp) (symbol->string exp))
+        ((boolean? exp) (if exp "true" "false"))
+        ((pair? exp) (if (langtag? (cdr exp))
+                         (format #f "\"~A\"~A" (car exp) (cdr exp))
+                         (format #f "\"~A\"^^~A" (car exp) (cdr exp))))))
+                         
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Namespaces 
 (define (register-namespace name namespace)
   (*namespaces* (cons (list name namespace) (*namespaces*))))
@@ -101,11 +125,36 @@
 (define unpack-bindings
   (json-unpacker untyped-binding))
 
-(define *sparql-query-unpacker* (make-parameter unpack-bindings))
+(define sparql-binding
+  (match-lambda
+    ((var . bindings)
+     (let ((value (alist-ref 'value bindings))
+           (type (alist-ref 'type bindings)))
+       (match type
+         ("literal"
+          (let ((lang (alist-ref 'xml:lang bindings)))
+            (cons var
+                  (if lang
+                      (conc value "@" lang) 
+                      value))))
+         ("typed-literal"
+          (let ((datatype (alist-ref 'datatype bindings)))
+            (case datatype
+              (("http://www.w3.org/2001/XMLSchema#integer")
+               (cons var (string->number value)))
+              (else (cons var value)))))
+         ("uri"
+          (cons var (read-uri (alist-ref 'value bindings))))
+         (else (cons var value)))))))
+
+(define unpack-sparql-bindings
+  (json-unpacker sparql-binding))
+
+(define *rdf-unpacker* (make-parameter unpack-bindings))
 
 (define (sparql-select query #!rest args)
   (let ((endpoint (*sparql-endpoint*))
-        (unpack (*sparql-query-unpacker*))
+        (unpack (*rdf-unpacker*))
         (query (apply format #f query args)))
     (when (*print-queries?*)
 	  (format (current-error-port) "~%==Executing Query==~%~A~%" (add-prefixes query)))
