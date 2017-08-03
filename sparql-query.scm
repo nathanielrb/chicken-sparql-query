@@ -29,8 +29,6 @@
 (define-inline (cons-when exp p)
   (if exp (cons exp p) p))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Basic datatypes
 (define (read-uri uri)
   (and (string? uri)
        (if  (or (substring=? "http://" uri)
@@ -39,22 +37,20 @@
            (string->symbol uri))))
 
 (define-inline (langtag? exp)
-  (and (symbol? exp)
-       (equal? (substring (symbol->string exp) 0 1) "@")))
+  (let ((s (if (symbol? exp) (symbol->string exp) exp)))
+    (equal? (substring s 0 1) "@")))
 
-(define (sparql-escape exp)
+(define (sparql-escape exp #!optional (joint " "))
   (cond ((string? exp) (conc "\"" exp "\""))
         ((keyword? exp) (keyword->string exp))
         ((number? exp) (number->string exp))
         ((symbol? exp) (symbol->string exp))
         ((boolean? exp) (if exp "true" "false"))
+        ((list? exp) (string-join (map sparql-escape exp) joint))
         ((pair? exp) (if (langtag? (cdr exp))
                          (format #f "\"~A\"~A" (car exp) (cdr exp))
                          (format #f "\"~A\"^^~A" (car exp) (cdr exp))))))
                          
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Namespaces 
 (define (register-namespace name namespace)
   (*namespaces* (cons (list name namespace) (*namespaces*))))
 
@@ -69,8 +65,7 @@
 (define (expand-namespace-prefixes namespaces)
   (apply conc
 	 (map (lambda (ns)
-		(format #f "PREFIX ~A: <~A>~%"
-			(car ns) (cadr ns)))
+		(format #f "PREFIX ~A: <~A>~%" (car ns) (cadr ns)))
 	      namespaces)))
 
 (define (add-prefixes query)
@@ -78,8 +73,6 @@
 	  (expand-namespace-prefixes (*namespaces*))
 	  query))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Querying SPARQL Endpoints
 (define sparql-headers (make-parameter '()))
 
 (define (sparql-update query #!rest args)
@@ -192,9 +185,6 @@
     ((query-unique-with-vars (vars ...) query form)
      (car-when (query-with-vars (vars ...) query form)))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Default definitions
 (define-namespace foaf "http://xmlns.com/foaf/0.1/")
 (define-namespace dc "http://purl.org/dc/elements/1.1/")
 (define-namespace rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
