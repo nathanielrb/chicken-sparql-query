@@ -11,6 +11,9 @@
   (make-parameter
    "http://127.0.0.1:8890/sparql"))
 
+(define *default-graph*
+  (make-parameter #f))
+
 (define *print-queries?* (make-parameter #t))
 
 (define *namespaces* (make-parameter '()))
