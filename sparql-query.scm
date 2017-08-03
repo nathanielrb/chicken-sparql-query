@@ -108,7 +108,7 @@
           (alist-ref 
            'bindings (alist-ref 'results (string->json results)))))))
 
-(define untyped-binding
+(define sparql-binding
   (match-lambda
     ((var . bindings)
      (let ((value (alist-ref 'value bindings))
@@ -122,10 +122,10 @@
               (else (cons var value)))))
          (else (cons var value)))))))
 
-(define unpack-bindings
-  (json-unpacker untyped-binding))
+(define sparql-bindings
+  (json-unpacker sparql-binding))
 
-(define sparql-binding
+(define typed-sparql-binding
   (match-lambda
     ((var . bindings)
      (let ((value (alist-ref 'value bindings))
@@ -147,14 +147,14 @@
           (cons var (read-uri (alist-ref 'value bindings))))
          (else (cons var value)))))))
 
-(define unpack-sparql-bindings
-  (json-unpacker sparql-binding))
+(define typed-sparql-bindings
+  (json-unpacker typed-sparql-binding))
 
-(define *query-results-unpacker* (make-parameter unpack-bindings))
+(define *query-unpacker* (make-parameter unpack-bindings))
 
 (define (sparql-select query #!rest args)
   (let ((endpoint (*sparql-endpoint*))
-        (unpack (*rdf-unpacker*))
+        (unpack (*query-unpacker*))
         (query (apply format #f query args)))
     (when (*print-queries?*)
 	  (format (current-error-port) "~%==Executing Query==~%~A~%" (add-prefixes query)))
